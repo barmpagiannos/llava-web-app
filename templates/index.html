@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen 2.5 Vision Analyzer</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; padding: 40px 20px; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
+        h1 { text-align: center; color: #1a73e8; font-size: 24px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        input[type="file"], input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .divider { text-align: center; margin: 15px 0; font-weight: bold; color: #aaa; font-size: 14px; text-transform: uppercase; }
+        
+        /* Νέο CSS για την προεπισκόπηση εικόνας */
+        #preview-container { display: none; text-align: center; margin-bottom: 20px; }
+        #preview-img { max-width: 100%; max-height: 250px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; }
+        
+        button { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #1557b0; }
+        button:disabled { background-color: #9aa0a6; cursor: not-allowed; }
+        
+        #result-container { margin-top: 25px; display: none; }
+        
+        /* Κουτάκια για τις γλώσσες */
+        .lang-box { background: #f8f9fa; border-left: 5px solid #1a73e8; padding: 15px; margin-bottom: 15px; border-radius: 0 6px 6px 0; line-height: 1.6; }
+        .lang-box.el { border-left-color: #34a853; } /* Πράσινο για τα Ελληνικά */
+        .lang-box h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        
+        .error-msg { background-color: #fce8e6; border-left: 5px solid #ea4335; padding: 15px; color: #c5221f; border-radius: 4px; display: none; margin-top: 20px;}
+        .spinner { display: none; text-align: center; margin-top: 20px; font-weight: 500; color: #5f6368; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ανάλυση Εικόνας με AI</h1>
+        
+        <div id="preview-container">
+            <img id="preview-img" src="" alt="Προεπισκόπηση Εικόνας">
+        </div>
+
+        <form id="analyzeForm">
+            <div class="form-group">
+                <label for="image_file">Επέλεξε εικόνα από τον υπολογιστή:</label>
+                <input type="file" id="image_file" name="image_file" accept="image/*">
+            </div>
+            
+            <div class="divider">Ή</div>
+            
+            <div class="form-group">
+                <label for="image_url">Επικόλληση URL Εικόνας:</label>
+                <input type="text" id="image_url" name="image_url" placeholder="https://example.com/image.jpg">
+            </div>
+            
+            <button type="submit" id="submitBtn">Ανάλυση Εικόνας</button>
+        </form>
+
+        <div class="spinner" id="spinner">
+            ⏳ Το Qwen 2.5 αναλύει και μεταφράζει... Περίμενε λίγο!
+        </div>
+
+        <div class="error-msg" id="error-container"></div>
+
+        <div id="result-container">
+            <div class="lang-box el">
+                <h3>🇬🇷 Ελληνικά</h3>
+                <div id="result-text-el"></div>
+            </div>
+            
+            <div class="lang-box">
+                <h3>🇬🇧 English</h3>
+                <div id="result-text-en"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('image_file');
+        const urlInput = document.getElementById('image_url');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImg = document.getElementById('preview-img');
+
+        // Προεπισκόπηση όταν διαλέγεις αρχείο (Τοπικά, χωρίς να ανέβει ακόμα)
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                };
+                reader.readAsDataURL(this.files[0]);
+                urlInput.value = ''; // Καθαρίζει το URL
+            }
+        });
+
+        // Προεπισκόπηση όταν βάζεις URL
+        urlInput.addEventListener('input', function() {
+            if (this.value) {
+                previewImg.src = this.value;
+                previewContainer.style.display = 'block';
+                fileInput.value = ''; // Καθαρίζει το Αρχείο
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        });
+
+        document.getElementById('analyzeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!fileInput.files[0] && !urlInput.value.trim()) {
+                alert('Παρακαλώ επέλεξε ένα αρχείο ή βάλε ένα URL!');
+                return;
+            }
+
+            const formData = new FormData();
+            if (fileInput.files[0]) formData.append('image_file', fileInput.files[0]);
+            else formData.append('image_url', urlInput.value.trim());
+
+            const submitBtn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('spinner');
+            const resultContainer = document.getElementById('result-container');
+            const errorContainer = document.getElementById('error-container');
+
+            submitBtn.disabled = true;
+            spinner.style.display = 'block';
+            resultContainer.style.display = 'none';
+            errorContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Προέκυψε κάποιο άγνωστο σφάλμα');
+                }
+
+                // Εισαγωγή των κειμένων στο HTML
+                document.getElementById('result-text-en').innerText = data.description_en;
+                document.getElementById('result-text-el').innerText = data.description_el || "Το μοντέλο δεν επέστρεψε Ελληνική μετάφραση.";
+                
+                resultContainer.style.display = 'block';
+            } catch (error) {
+                errorContainer.innerText = error.message;
+                errorContainer.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

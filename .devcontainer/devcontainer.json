@@ -1,0 +1,33 @@
+{
+    "name": "LLaVA Flask App",
+    "image": "mcr.microsoft.com/devcontainers/python:3.10",
+    
+    "features": {
+        "ghcr.io/devcontainers/features/python:1": {
+            "installTools": true,
+            "version": "3.10"
+        }
+    },
+
+    "forwardPorts": [5000],
+    "portsAttributes": {
+        "5000": {
+            "label": "Flask App",
+            "onAutoForward": "notify"
+        }
+    },
+
+    "postCreateCommand": "pip install -r requirements.txt",
+
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance"
+            ]
+        }
+    }
+}
