@@ -3,3 +3,6 @@ requests==2.31.0
 python-dotenv==1.0.0
 Pillow==10.2.0
 huggingface_hub
+Flask-Limiter==3.5.0
+gunicorn==21.2.0
+deep-translator==1.11.4
