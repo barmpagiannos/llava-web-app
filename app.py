@@ -34,7 +34,7 @@ MODEL_ID = "Qwen/Qwen2.5-VL-7B-Instruct"
 def index():
     return render_template('index.html')
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/analyze', methods=['POST'], strict_slashes=False)
 @limiter.limit("5 per minute") # Προστασία από σπαμ
 def analyze():
     image_bytes = None
