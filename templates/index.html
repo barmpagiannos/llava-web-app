@@ -3,38 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qwen 2.5 Vision Analyzer</title>
+    
+    <title>OmniVision AI | Image Analyzer & Translator</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👁️</text></svg>">
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; padding: 40px 20px; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 600px; }
-        h1 { text-align: center; color: #1a73e8; font-size: 24px; margin-bottom: 25px; }
+        /* Μικρή αναβάθμιση και στα χρώματα του UI για να ταιριάζει με το νέο όνομα */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 40px 20px; }
+        .container { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 650px; }
+        
+        /* Ο κεντρικός τίτλος μέσα στη σελίδα */
+        h1 { text-align: center; color: #2c3e50; font-size: 28px; margin-bottom: 10px; letter-spacing: -0.5px; }
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 15px; margin-bottom: 30px; }
+        
         .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
-        input[type="file"], input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .divider { text-align: center; margin: 15px 0; font-weight: bold; color: #aaa; font-size: 14px; text-transform: uppercase; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #34495e;}
+        input[type="file"], input[type="text"] { width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s; }
+        input[type="text"]:focus { border-color: #3498db; outline: none; }
+        .divider { text-align: center; margin: 20px 0; font-weight: bold; color: #bdc3c7; font-size: 14px; text-transform: uppercase; }
         
-        /* Νέο CSS για την προεπισκόπηση εικόνας */
-        #preview-container { display: none; text-align: center; margin-bottom: 20px; }
-        #preview-img { max-width: 100%; max-height: 250px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); object-fit: contain; }
+        #preview-container { display: none; text-align: center; margin-bottom: 25px; }
+        #preview-img { max-width: 100%; max-height: 280px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.1); object-fit: contain; }
         
-        button { width: 100%; padding: 12px; background-color: #1a73e8; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.3s; }
-        button:hover { background-color: #1557b0; }
-        button:disabled { background-color: #9aa0a6; cursor: not-allowed; }
+        button { width: 100%; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s, transform 0.1s; }
+        button:hover { background-color: #2980b9; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
         
-        #result-container { margin-top: 25px; display: none; }
+        #result-container { margin-top: 30px; display: none; }
         
-        /* Κουτάκια για τις γλώσσες */
-        .lang-box { background: #f8f9fa; border-left: 5px solid #1a73e8; padding: 15px; margin-bottom: 15px; border-radius: 0 6px 6px 0; line-height: 1.6; }
-        .lang-box.el { border-left-color: #34a853; } /* Πράσινο για τα Ελληνικά */
-        .lang-box h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .lang-box { background: #f8f9fa; border-left: 5px solid #3498db; padding: 18px; margin-bottom: 15px; border-radius: 0 8px 8px 0; line-height: 1.7; font-size: 15px; color: #2c3e50;}
+        .lang-box.el { border-left-color: #2ecc71; } 
+        .lang-box h3 { margin-top: 0; margin-bottom: 12px; font-size: 17px; display: flex; align-items: center; gap: 8px; color: #2c3e50; }
         
-        .error-msg { background-color: #fce8e6; border-left: 5px solid #ea4335; padding: 15px; color: #c5221f; border-radius: 4px; display: none; margin-top: 20px;}
-        .spinner { display: none; text-align: center; margin-top: 20px; font-weight: 500; color: #5f6368; }
+        .error-msg { background-color: #fdf0ed; border-left: 5px solid #e74c3c; padding: 15px; color: #c0392b; border-radius: 6px; display: none; margin-top: 20px; font-weight: 500;}
+        .spinner { display: none; text-align: center; margin-top: 25px; font-weight: 600; color: #3498db; font-size: 15px; animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Ανάλυση Εικόνας με AI</h1>
+        <h1>VisualSense AI</h1>
+        <div class="subtitle">Έξυπνη Περιγραφή Εικόνων</div>
         
         <div id="preview-container">
             <img id="preview-img" src="" alt="Προεπισκόπηση Εικόνας">
