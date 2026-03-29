@@ -1,7 +1,5 @@
 # VisualSense AI
-
 **VisualSense AI** is a professional-grade web application that leverages state-of-the-art Vision Language Models (VLM) to analyze images and provide detailed descriptions in both **English** and **Greek**. 
-
 By combining the reasoning power of **Qwen 2.5 VL** with the accuracy of **Google Translation**, this tool offers a seamless experience for understanding visual content with native-level linguistic support.
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
@@ -34,26 +32,53 @@ By combining the reasoning power of **Qwen 2.5 VL** with the accuracy of **Googl
 ## Local Installation & Setup
 
 1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/barmpagiannos/llava-web-app.git](https://github.com/barmpagiannos/llava-web-app.git)
+```bash
+   git clone https://github.com/barmpagiannos/llava-web-app.git
    cd llava-web-app
+```
 
 2. **Install dependencies:**
-   ```bash
+```bash
    pip install -r requirements.txt
+```
 
 3. **Set up Environment Variables:**
-  Create a .env file in the root directory and add your Hugging Face Token:
-  HF_TOKEN=your_hugging_face_token_here
+
+   Create a `.env` file in the root directory and add your Hugging Face Token:
+```
+   HF_TOKEN=your_hugging_face_token_here
+```
 
 4. **Run the application:**
-  ```bash
-  python app.py
-  Open http://localhost:5000 in your browser.
+```bash
+   python app.py
+```
+   Open `http://localhost:5000` in your browser.
 
 ---
 
 ## Deployment on Render
 
+This project is optimized for deployment on the [Render](https://render.com) platform as a **Web Service**.
 
-  
+| Setting | Value |
+|---|---|
+| **Build Command** | `pip install -r requirements.txt` |
+| **Start Command** | `gunicorn app:app` |
+
+**Required Environment Variables:**
+
+| Variable | Description |
+|---|---|
+| `HF_TOKEN` | Your Hugging Face API Key |
+| `PYTHON_VERSION` | `3.12.8` *(Recommended for library compatibility)* |
+
+---
+
+## License
+
+Distributed under the **MIT License**. This project is intended for portfolio demonstration and educational purposes.
+
+---
+
+*Developed as a high-performance AI Portfolio Project.*
