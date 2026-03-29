@@ -77,7 +77,7 @@ This project is optimized for deployment on the [Render](https://render.com) pla
 
 ## License
 
-Distributed under the **MIT License**. This project is intended for portfolio demonstration and educational purposes.
+Distributed under the **Apache 2.0 License**. This project is intended for portfolio demonstration and educational purposes.
 
 ---
 
