@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
-from huggingface_hub import InferenceClient
+from google import genai
 import os
 import base64
 import io
@@ -8,34 +8,36 @@ from PIL import Image
 import requests
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-# ΝΕΟ: Εισαγωγή της βιβλιοθήκης για τη μετάφραση
 from deep_translator import GoogleTranslator
 
 app = Flask(__name__)
 
-# Ρύθμιση του Limiter: Συνδέει κάθε χρήστη με την IP του
+# Ρύθμιση του Limiter
 limiter = Limiter(
     get_remote_address,
     app=app,
     storage_uri="memory://",
-    default_limits=["200 per day", "50 per hour"] # Γενικά όρια
+    default_limits=["200 per day", "50 per hour"]
 )
 
 load_dotenv()
-HF_TOKEN = os.getenv("HF_TOKEN")
+# Διαβάζουμε το κλειδί του Gemini
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Η ολοκαίνουργια βιβλιοθήκη βρίσκει το σωστό Router URL αυτόματα!
-client = InferenceClient(api_key=HF_TOKEN)
+if GEMINI_API_KEY:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+else:
+    client = None
 
-# Επιστρέφουμε στο Llama 3.2 που είναι το επίσημο Vision μοντέλο
-MODEL_ID = "Qwen/Qwen2.5-VL-7B-Instruct"
+# Χρησιμοποιούμε το μοντέλο gemini-2.5-flash
+MODEL_ID = "gemini-2.5-flash"
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/analyze', methods=['POST'], strict_slashes=False)
-@limiter.limit("5 per minute") # Προστασία από σπαμ
+@limiter.limit("5 per minute")
 def analyze():
     image_bytes = None
     
@@ -83,28 +85,21 @@ def analyze():
         img.save(buffered, format="JPEG", quality=85) # Σώζουμε ως "καθαρό" JPEG
         base64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
         
-        # 3. Αποστολή στο AI - Ζητάμε ΜΟΝΟ Αγγλικά
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text", 
-                        "text": "Describe this image in detail. Output ONLY the English description."
-                    },
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                ]
-            }
-        ]
-        
-        response = client.chat.completions.create(
+        # 3. Αποστολή στο AI (Gemini) - Ζητάμε ΜΟΝΟ Αγγλικά
+        if not client:
+            raise Exception("Δεν βρέθηκε κλειδί GEMINI_API_KEY στο περιβάλλον .env")
+            
+        # Το νέο API google.genai χρησιμοποιεί το 'contents'
+        response = client.models.generate_content(
             model=MODEL_ID,
-            messages=messages,
-            max_tokens=600 # Μειωμένο επειδή ζητάμε μόνο μία γλώσσα
+            contents=[
+                "Describe this image in detail. Output ONLY the English description.",
+                img
+            ]
         )
         
         # Η αγγλική περιγραφή απευθείας από το AI
-        desc_en = response.choices[0].message.content.strip()
+        desc_en = response.text.strip()
         
         # 4. ΜΕΤΑΦΡΑΣΗ ΜΕ GOOGLE TRANSLATOR
         try:

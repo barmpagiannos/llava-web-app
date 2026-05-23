@@ -2,7 +2,7 @@ Flask
 gunicorn
 requests
 python-dotenv
-huggingface_hub
+google-genai
 Pillow
 flask-limiter
 deep-translator
