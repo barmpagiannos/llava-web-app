@@ -12,6 +12,9 @@
         /* Μικρή αναβάθμιση και στα χρώματα του UI για να ταιριάζει με το νέο όνομα */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; padding: 40px 20px; }
         .container { background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 650px; }
+        .header-row { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+        .lang-toggle { width: auto; padding: 10px 14px; background-color: #1f6f8b; font-size: 14px; border-radius: 999px; }
+        .lang-toggle:hover { background-color: #18586f; }
         
         /* Ο κεντρικός τίτλος μέσα στη σελίδα */
         h1 { text-align: center; color: #2c3e50; font-size: 28px; margin-bottom: 10px; letter-spacing: -0.5px; }
@@ -37,6 +40,7 @@
         .lang-box.el { border-left-color: #2ecc71; } 
         .lang-box h3 { margin-top: 0; margin-bottom: 12px; font-size: 17px; display: flex; align-items: center; gap: 8px; color: #2c3e50; }
         
+        .notice-msg { background-color: #f3f8ff; border-left: 5px solid #4f8cff; padding: 15px; color: #23527c; border-radius: 6px; display: none; margin-top: 20px; font-weight: 500; }
         .error-msg { background-color: #fdf0ed; border-left: 5px solid #e74c3c; padding: 15px; color: #c0392b; border-radius: 6px; display: none; margin-top: 20px; font-weight: 500;}
         .spinner { display: none; text-align: center; margin-top: 25px; font-weight: 600; color: #3498db; font-size: 15px; animation: pulse 1.5s infinite; }
         
@@ -45,6 +49,9 @@
 </head>
 <body>
     <div class="container">
+        <div class="header-row">
+            <button type="button" id="langToggle" class="lang-toggle">English</button>
+        </div>
         <h1>VisualSense AI</h1>
         <div class="subtitle">Έξυπνη Περιγραφή Εικόνων</div>
         
@@ -69,18 +76,19 @@
         </form>
 
         <div class="spinner" id="spinner">
-            ⏳ Το AI αναλύει και μεταφράζει... Περίμενε λίγο!
+            Το AI αναλύει και μεταφράζει... Περίμενε λίγο!
         </div>
 
-        <div class="error-msg" id="error-container"></div>
+    <div class="notice-msg" id="notice-container"></div>
+    <div class="error-msg" id="error-container"></div>
 
         <div id="result-container">
-            <div class="lang-box el">
+            <div class="lang-box el" id="result-box-el">
                 <h3>🇬🇷 Ελληνικά</h3>
                 <div id="result-text-el"></div>
             </div>
             
-            <div class="lang-box">
+            <div class="lang-box" id="result-box-en">
                 <h3>🇬🇧 English</h3>
                 <div id="result-text-en"></div>
             </div>
@@ -92,6 +100,99 @@
         const urlInput = document.getElementById('image_url');
         const previewContainer = document.getElementById('preview-container');
         const previewImg = document.getElementById('preview-img');
+        const langToggle = document.getElementById('langToggle');
+        const root = document.documentElement;
+        const resultContainer = document.getElementById('result-container');
+        const resultBoxEl = document.getElementById('result-box-el');
+        const resultBoxEn = document.getElementById('result-box-en');
+        const resultTextEl = document.getElementById('result-text-el');
+        const resultTextEn = document.getElementById('result-text-en');
+        const noticeContainer = document.getElementById('notice-container');
+
+        let currentResult = {
+            description_en: '',
+            description_el: ''
+        };
+
+        const translations = {
+            el: {
+                htmlLang: 'el',
+                toggleLabel: 'English',
+                title: 'VisualSense AI',
+                subtitle: 'Έξυπνη Περιγραφή Εικόνων',
+                fileLabel: 'Επέλεξε εικόνα από τον υπολογιστή:',
+                divider: 'Ή',
+                urlLabel: 'Επικόλληση URL Εικόνας:',
+                urlPlaceholder: 'https://example.com/image.jpg',
+                submit: 'Ανάλυση Εικόνας',
+                spinner: 'Το AI αναλύει και μεταφράζει... Περίμενε λίγο!',
+                resultElTitle: '🇬🇷 Ελληνικά',
+                resultEnTitle: '🇬🇧 English',
+                emptyTranslation: 'Το μοντέλο δεν επέστρεψε Ελληνική μετάφραση.',
+                uploadAlert: 'Παρακαλώ επέλεξε ένα αρχείο ή βάλε ένα URL!',
+                modelUnavailableNotice: 'Το επιλεγμένο LLM μοντέλο δεν είναι διαθέσιμο ή έχει αποσυρθεί. Δοκίμασε αργότερα ή άλλαξε μοντέλο στη ρύθμιση του server.'
+            },
+            en: {
+                htmlLang: 'en',
+                toggleLabel: 'Ελληνικά',
+                title: 'VisualSense AI',
+                subtitle: 'Smart Image Descriptions',
+                fileLabel: 'Choose an image from your computer:',
+                divider: 'OR',
+                urlLabel: 'Paste Image URL:',
+                urlPlaceholder: 'https://example.com/image.jpg',
+                submit: 'Analyze Image',
+                spinner: 'The AI is analyzing and translating... Please wait!',
+                resultElTitle: '🇬🇷 Greek',
+                resultEnTitle: '🇬🇧 English',
+                emptyTranslation: 'The model did not return a Greek translation.',
+                uploadAlert: 'Please choose a file or paste a URL!',
+                modelUnavailableNotice: 'The selected LLM model is unavailable or has been deprecated. Try again later or change the model in the server settings.'
+            }
+        };
+
+        let currentLanguage = 'el';
+
+        function renderVisibleDescription() {
+            const strings = translations[currentLanguage];
+            const showGreek = currentLanguage === 'el';
+
+            resultBoxEl.style.display = showGreek ? 'block' : 'none';
+            resultBoxEn.style.display = showGreek ? 'none' : 'block';
+
+            resultTextEl.innerText = currentResult.description_el || strings.emptyTranslation;
+            resultTextEn.innerText = currentResult.description_en || (currentLanguage === 'en' ? 'No English description yet.' : '');
+        }
+
+        function showNotice(message) {
+            noticeContainer.innerText = message;
+            noticeContainer.style.display = 'block';
+        }
+
+        function applyLanguage(language) {
+            currentLanguage = language;
+            const strings = translations[language];
+
+            root.lang = strings.htmlLang;
+            langToggle.textContent = strings.toggleLabel;
+            document.title = strings.title;
+            document.querySelector('h1').textContent = strings.title;
+            document.querySelector('.subtitle').textContent = strings.subtitle;
+            document.querySelector('label[for="image_file"]').textContent = strings.fileLabel;
+            document.querySelector('.divider').textContent = strings.divider;
+            document.querySelector('label[for="image_url"]').textContent = strings.urlLabel;
+            urlInput.placeholder = strings.urlPlaceholder;
+            document.getElementById('submitBtn').textContent = strings.submit;
+            document.getElementById('spinner').textContent = strings.spinner;
+            document.querySelector('#result-container .lang-box.el h3').textContent = strings.resultElTitle;
+            document.querySelector('#result-container .lang-box:not(.el) h3').textContent = strings.resultEnTitle;
+
+            renderVisibleDescription();
+        }
+
+        langToggle.addEventListener('click', function() {
+            applyLanguage(currentLanguage === 'el' ? 'en' : 'el');
+        });
 
         // Προεπισκόπηση όταν διαλέγεις αρχείο (Τοπικά, χωρίς να ανέβει ακόμα)
         fileInput.addEventListener('change', function() {
@@ -121,7 +222,7 @@
             e.preventDefault();
             
             if (!fileInput.files[0] && !urlInput.value.trim()) {
-                alert('Παρακαλώ επέλεξε ένα αρχείο ή βάλε ένα URL!');
+                alert(translations[currentLanguage].uploadAlert);
                 return;
             }
 
@@ -131,12 +232,12 @@
 
             const submitBtn = document.getElementById('submitBtn');
             const spinner = document.getElementById('spinner');
-            const resultContainer = document.getElementById('result-container');
             const errorContainer = document.getElementById('error-container');
 
             submitBtn.disabled = true;
             spinner.style.display = 'block';
             resultContainer.style.display = 'none';
+            noticeContainer.style.display = 'none';
             errorContainer.style.display = 'none';
 
             try {
@@ -147,13 +248,26 @@
                 
                 const data = await response.json();
 
+                if (data.notice_key === 'model_unavailable') {
+                    showNotice(translations[currentLanguage].modelUnavailableNotice);
+                    currentResult = {
+                        description_en: '',
+                        description_el: ''
+                    };
+                    resultContainer.style.display = 'none';
+                    return;
+                }
+
                 if (!response.ok) {
                     throw new Error(data.error || 'Προέκυψε κάποιο άγνωστο σφάλμα');
                 }
 
-                // Εισαγωγή των κειμένων στο HTML
-                document.getElementById('result-text-en').innerText = data.description_en;
-                document.getElementById('result-text-el').innerText = data.description_el || "Το μοντέλο δεν επέστρεψε Ελληνική μετάφραση.";
+                currentResult = {
+                    description_en: data.description_en || '',
+                    description_el: data.description_el || ''
+                };
+
+                renderVisibleDescription();
                 
                 resultContainer.style.display = 'block';
             } catch (error) {
@@ -164,6 +278,8 @@
                 spinner.style.display = 'none';
             }
         });
+
+        applyLanguage('el');
     </script>
 </body>
 </html>

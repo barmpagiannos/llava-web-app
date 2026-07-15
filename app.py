@@ -32,6 +32,18 @@ else:
 # Χρησιμοποιούμε το μοντέλο gemini-2.5-flash
 MODEL_ID = "gemini-2.5-flash"
 
+
+def is_model_unavailable_error(error_message):
+    lowered_message = error_message.lower()
+    return any(keyword in lowered_message for keyword in [
+        "deprecated",
+        "not found",
+        "model not found",
+        "unsupported model",
+        "unavailable",
+        "does not exist"
+    ])
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -113,6 +125,10 @@ def analyze():
     except Exception as e:
         # Αν το AI συνεχίζει να βγάζει 500, σημαίνει ότι το συγκεκριμένο μοντέλο έχει θέμα τώρα
         error_msg = str(e)
+        if is_model_unavailable_error(error_msg):
+            return jsonify({
+                'notice_key': 'model_unavailable'
+            }), 200
         if "500" in error_msg:
             return jsonify({'error': "Ο server του AI είναι προσωρινά υπερφορτωμένος. Δοκίμασε ξανά σε λίγο!"}), 500
         return jsonify({'error': f"Σφάλμα AI: {error_msg}"}), 500
